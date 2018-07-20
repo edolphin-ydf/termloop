@@ -1,12 +1,16 @@
 package termloop
 
+import (
+	"github.com/mattn/go-runewidth"
+)
+
 // Text represents a string that can be drawn to the screen.
 type Text struct {
 	x      int
 	y      int
 	fg     Attr
 	bg     Attr
-	text   []rune
+	text   string
 	canvas []Cell
 }
 
@@ -15,17 +19,20 @@ type Text struct {
 // Text's text to be text.
 // Returns a pointer to the new Text.
 func NewText(x, y int, text string, fg, bg Attr) *Text {
-	str := []rune(text)
-	c := make([]Cell, len(str))
-	for i := range c {
-		c[i] = Cell{Ch: str[i], Fg: fg, Bg: bg}
+	c := make([]Cell, 0, runewidth.StringWidth(text))
+	for _, ch := range text {
+		c = append(c, Cell{Ch: ch, Fg: fg, Bg: bg})
+		if runewidth.RuneWidth(ch) > 1 {
+			c = append(c, Cell{Ch: 0, Fg: fg, Bg: bg})
+		}
 	}
+
 	return &Text{
 		x:      x,
 		y:      y,
 		fg:     fg,
 		bg:     bg,
-		text:   str,
+		text:   text,
 		canvas: c,
 	}
 }
@@ -47,7 +54,7 @@ func (t *Text) Position() (int, int) {
 
 // Size returns the width and height of the Text.
 func (t *Text) Size() (int, int) {
-	return len(t.text), 1
+	return runewidth.StringWidth(t.text), 1
 }
 
 // SetPosition sets the coordinates of the Text to be (x, y).
@@ -58,16 +65,21 @@ func (t *Text) SetPosition(x, y int) {
 
 // Text returns the text of the Text.
 func (t *Text) Text() string {
-	return string(t.text)
+	return t.text
 }
 
 // SetText sets the text of the Text to be text.
 func (t *Text) SetText(text string) {
-	t.text = []rune(text)
-	c := make([]Cell, len(t.text))
-	for i := range c {
-		c[i] = Cell{Ch: t.text[i], Fg: t.fg, Bg: t.bg}
+	t.text = text
+
+	c := make([]Cell, 0, runewidth.StringWidth(text))
+	for _, ch := range text {
+		c = append(c, Cell{Ch: ch, Fg: t.fg, Bg: t.bg})
+		if runewidth.RuneWidth(ch) > 1 {
+			c = append(c, Cell{Ch: 0, Fg: t.fg, Bg: t.bg})
+		}
 	}
+
 	t.canvas = c
 }
 
